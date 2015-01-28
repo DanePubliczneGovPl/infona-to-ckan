@@ -1,0 +1,13 @@
+mongo = {
+    'connection': 'localhost',
+    'database': 'crip'
+}
+
+ckan = {
+  'host': 'http://localhost:5000',
+  'apikey': '',
+  'user_agent': 'infona_to_ckan'
+}
+
+dev = True # false for production
+dev_password = 'Password1';
