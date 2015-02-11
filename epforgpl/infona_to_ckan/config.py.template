@@ -10,4 +10,6 @@ ckan = {
 }
 
 dev = True # false for production
-dev_password = 'Password1';
+dev_password = 'Password1'
+
+tmp_file_dir = '/tmp'

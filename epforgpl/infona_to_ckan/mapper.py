@@ -4,6 +4,36 @@ Mapping functions
 '''
 import re
 
+class MappingException(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+def mimetype(ext):
+    mimes = {
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'xls':'application/vnd.ms-excel',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'doc':'application/msword',
+        'zip': 'application/zip',        
+        'ods':'application/vnd.oasis.opendocument.spreadsheet',
+        'html':'text/html',
+        'pdf':'application/pdf',
+        '7z': 'application/x-7z-compressed',
+        "rtf": 'application/rtf',
+        "txt": 'text/plain',
+        "csv": 'text/csv',
+        "jpg": 'image/jpeg',
+        'jpeg': 'image/jpeg'
+    }
+    mime = mimes.get(ext)
+    
+    if not mime:
+        # Fail softly 
+        raise MappingException("No mimetype defined for: " + ext)
+    return mime
+
 def org_image(name):    
     urls = {
         'Ministerstwo Administracji i Cyfryzacji': 'https://mac.gov.pl/sites/all/themes/global/images/logo.jpg?2',
@@ -12,7 +42,7 @@ def org_image(name):
 
     if not url:
         # Fail softly
-        print("Warning: No image url for: '" + name + "'")
+        raise MappingException("Warning: No image url for: '" + name + "'")
     return url
 
 def user_state(infona):
@@ -62,28 +92,49 @@ def _(text):
         return None 
     return text
 
-def package_license(license_text):
+def package_license(p, license_text, errors):
     license_text = license_text.strip()
-    if license_text == u'bez ogranicze\u0144' or license_text == u'bezogranicze\u0144' or license_text == '':
-        return None
-    return license_text
+    if license_text in [u"Bez ograniczeń", u"bez ograniczeń ", u"bez ograniczeń", u"bezograniczeń"] or not license_text:
+        return
+
+    if license_text in [u"Dane mogą być wykorzystane z powołaniem się na źródło",
+        u"Dane można wykorzystać z podaniem źródła.",
+        u"Dane są możliwe do wykorzystania z powołaniem się na źródło.",
+        u"Dane są możliwe do wykorzystania z powołaniem się na źródło",
+        u"Dane możliwe do wykorzystania z powołaniem się na źródło",
+        u"Dane można wykorzystać powołując się na źródło.",
+        u"Dane mogą być wykorzystane z podaniem źródła.",
+        u"Dane mogą być wykorzystane z podaniem źródła.",
+        u"Dane mogą być wykorzystane z podaniem źródła",
+        u"Bez ograniczeń, pod warunkiem podania źródła informacji",
+        u"Bez ograniczeń pod warunkiem podania źródła informacji"]:
+        p['license_condition_source'] = True
+        return
+
+    raise MappingException("Untranslated reuse restrictions: " + license_text)
 
 # CKAN accepts lowercase alphanumeric+_ characters as some inputs
 def alphaname(name):
     pl_map = {
-        "ę": "e",
-        "ś": "s",
-        "ą": 'a',
-        "ż": 'z',
-        'ź': 'z',
-        'ó': 'o',
-        'ć': 'c',
-        'ń': 'n',
-        'ł': 'l'
+        u"ę": "e",
+        u"ś": "s",
+        u"ą": 'a',
+        u"ż": 'z',
+        u'ź': 'z',
+        u'ó': 'o',
+        u'ć': 'c',
+        u'ń': 'n',
+        u'ł': 'l'
     }
     name = re.sub('^\s+|[\s\.]+$', '', name.lower()) # Trim
     for pl, plm in pl_map.iteritems():
         name = re.sub(pl, plm, name)
 
     name = re.sub('\\W', '_', name) # Clear other chars
+    return name
+
+def alphanamepl(name):
+    name = re.sub('^\s+|[\s\.]+$', '', name.lower()) # Trim
+    name = re.sub('\\W', '_', name) # Clear other chars
+    
     return name
