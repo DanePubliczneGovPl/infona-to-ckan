@@ -5,6 +5,7 @@ epforgpl/infona_to_ckan/config.py
 .project
 .pydev*
 .settings
+.idea
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
