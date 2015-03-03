@@ -185,21 +185,61 @@ class Process(object):
         print 'Processing categories..'
         # http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.create.vocabulary_create
         
-        categories = self.db.category.find() 
+        categories = self.db.category.find()
 
-        # TODO add categories as new objects with translation
-        #    db_category = {
-        #        _id: true,
-        #        name: true,
-        #        localizedName: {pl: true, en: true}
-        #    }
-         
-        v = {
-            'name': 'categories',
-            'tags': map(lambda c: {'name': c['_id']}, categories)
+        category_map = {
+            "administracja_publiczna": {
+                'title': 'Administracja Publiczna',
+                'color': '#4b77be',
+            },
+            "biznes_gospodarka": {
+                'title': 'Biznes i Gospodarka',
+                'color': '#24485f',
+            },
+            "budzet_finanse_publiczne": {
+                'title': 'Budżet i Finanse Publiczne',
+                'color': '#6c7a89',
+            },
+            "nauka_oswiata": {
+                'title': 'Nauka i Oświata',
+                'color': '#674172',
+            },
+            "praca_pomoc_spoleczna": {
+                'title': 'Praca i Pomoc Społeczna',
+                'color': '#bf3607',
+            },
+            "rolnictwo": {
+                'title': 'Rolnictwo',
+                'color': '#3a539b',
+            },
+            "spoleczenstwo": {
+                'title': 'Społeczeństwo',
+                'color': '#d35400',
+            },
+            "sport_turystyka": {
+                'title': 'Sport i Turystyka',
+                'color': '#2574a9',
+            },
+            "srodowisko": {
+                'title': 'Środowisko',
+                'color': '#138435',
+            }
         }
+
+        for c in categories:
+            cid = c['_id']
+            icon_path = os.path.dirname(os.path.realpath(__file__)) + os.sep + 'categories' + os.sep + cid.replace('_','-') + '.png'
+
+            g = {
+                'name': cid,
+                'id': cid,
+                'type': 'category',
+                'title': category_map[cid]['title'],
+                'image_upload': open(icon_path),
+                #'color': category_map[cid]['color'],
+            }
         
-        self.action.vocabulary_create(**v)
+            self.action.group_create(**g)
 
     def _other_vocabularies(self):
         print '\nProcessing other vocabularies..'
