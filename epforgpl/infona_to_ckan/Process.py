@@ -75,9 +75,13 @@ class ActionWrapperDev(object):
                                                     + "\n\tdb.informationResource.find({'metadata.webPageUrl': '"+ kwargs['url'] +"'})" )
                     else: 
                         self._process.errors.append(debug_action + "\n\t" + str(e))
+
+                    print str(e)
                         
                 except ckanapi.errors.NotFound as e: 
                     self._process.errors.append(debug_action + "\n\t" + str(e))
+
+                    print str(e)
                  
         return action
     
@@ -118,6 +122,7 @@ class Process(object):
         self.known_keys = set()         
         self.user_names = {}
         self.user_keys = {}
+        self.package_id_map = {}
     
     def process(self):
         # connect to Mongo
@@ -131,11 +136,13 @@ class Process(object):
             user_agent=config.ckan['user_agent'])
         
         self.action = ActionWrapperDev(self)
-        
+
+        # TODO
         self._category()
         self._other_vocabularies()
         self._organization()
         self._user()
+        #self._pullUsers()
         self._package()
         self._resource()
         
@@ -233,10 +240,10 @@ class Process(object):
         # http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.create.package_create
         
         self._update_known_keys('informationResource', [
-            '_id', 'metadata', 'publisherId', 'version', 'status'
-            'creationTimestamp', 'lastUpdateTimestamp', 'createdBy', 'lastUpdateBy'
+            '_id', 'metadata', 'publisherId', 'version', 'status',
+            'creationTimestamp', 'lastUpdateTimestamp', 'createdBy', 'lastUpdateBy',
             # Skipping fields below
-            'indexed', '_class', 'metadata._id', 'metadata.additionalMetadata'
+            'indexed', '_class', 'metadata._id', 'metadata.additionalMetadata', 'publishedBy', 'publicationDate'
             ])
         self._update_known_keys('informationResource.metadata', [
             'title', 'description', 'webPageUrl', 'updateFrequency', 'licensingInformation',
@@ -250,7 +257,6 @@ class Process(object):
                 self._add_unknown_key('informationResource.metadata.additionalMetadata', ir.metadata.additionalMetadata)
             
             p = {
-                'id': str(ir._id),
                 'name': tr.alphaname(ir.metadata.title)[:100],
                 'owner_org': ir.publisherId,
                 'title': ir.metadata.title,
@@ -263,9 +269,12 @@ class Process(object):
                 'category': ir.metadata.categoryId,
             }
 
-            self.catch(tr.package_license, p, ir.metadata.licensingInformation)
+            try:
+                tr.package_license(p, ir.metadata.licensingInformation)
+            except tr.MappingException as ex:
+                self.warnings.append(str(ex) + ' in package ' + p['name'])
             
-            p['tags'] = map(lambda t: {'name': tr.alphanamepl(t)}, ir.metadata.tags)
+            p['tags'] = map(lambda t: {'name': tr.alphaname(t)}, ir.metadata.tags)
     
             #    // TODO lastUpdateTimestamp
             #    // TODO lastUpdateBy
@@ -275,7 +284,9 @@ class Process(object):
             #
      
             with api_key(self.ckan, self.user_keys[ir.lastUpdatedBy]):
-                self.action.package_create(**p)
+                ret = self.action.package_create(**p)
+                if ret:
+                    self.package_id_map[str(ir._id)] = ret['id']
      
             self.package_count += 1
             
@@ -311,7 +322,9 @@ class Process(object):
         self._update_known_keys('resourceUnit.metadata', [
             'title', 'informationResourceId', 'status', 'version',
             'sourceUrl', 'contentSourceClassification', 
-            'localFileContentId', 'fileName', 'fileType'
+            'localFileContentId', 'fileName', 'fileType',
+            # warn
+            'licensingInformation', 'resourceLicensingInherit'
             ])
                 
         for rud in self.db.resourceUnit.find():
@@ -323,7 +336,7 @@ class Process(object):
             
             r = {
                 'id': str(ru._id),
-                'package_id': ru.informationResourceId,
+                'package_id': self.package_id_map.get(ru.informationResourceId, None),
                 'state': tr.state_ru(ru.status),
                 'revision_id': ru.version,
                 'name': ru.metadata.title,
@@ -336,6 +349,9 @@ class Process(object):
             }
             if ru.status == 'DRAFT':
                 self.warnings.append('WARNING: JIP w CKAN nie ma statusu DRAFT, bedzie widoczny dla wszystkich: ' + ru.metadata.title)
+
+            if ru.metadata.licensingInformation:
+                self.warnings.append('resource[' + r['id'] + ']' + u': Pomijam licencję specyficzną dla resource: ' + ru.metadata.licensingInformation)
             
             if ru.metadata.contentSourceClassification == 'UPLOADED':
                 local_path = self._download_file(ru.metadata.localFileContentId, ru.metadata.fileName)
@@ -364,17 +380,24 @@ class Process(object):
                 self.action.resource_create(**r)
             
             self.resource_count += 1
+
+    def _pullUsers(self):
+        for u in self.ckan.action.user_list():
+            self.user_names[u['id']] = u['name']
+            self.user_keys[u['id']] = u['apikey']
+            self.user_count += 1
             
     def _user(self):
         print '\nProcessing users..'
         # http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.create.user_create
         
-        self._update_known_keys('resourceUnit', [
-            '_id', 'email', 'role'
+        self._update_known_keys('user', [
+            '_id', 'email', 'role', 'publisherId', 'status', 'metadata',
             # Skipping fields below
-            'indexed', '_class', 'metadata._id', 'metadata.additionalMetadata'
+            'indexed', '_class', 'metadata._id', 'metadata.additionalMetadata', 'lastUpdatedBy',
+            'normalizedEmail', 'password', 'creationTimestamp', 'apiKey'
             ])
-        self._update_known_keys('resourceUnit.metadata', [
+        self._update_known_keys('user.metadata', [
             'firstName', 'lastName'
             ])                
         
@@ -388,7 +411,7 @@ class Process(object):
             
             name = tr.alphaname(fullname)
             while name in self.user_names.itervalues():
-                m = re.match('^(.*)(\d+)$', name)
+                m = re.match('^(.*?)(\d+)$', name)
                 if m:
                     name = m.group(1) + str(int(m.group(2)) + 1)
                 else:
@@ -402,8 +425,12 @@ class Process(object):
                 'email': u.email, # TODO login with email
                 'password': config.dev_password if config.dev else uuid.uuid4(),
                 'fullname': fullname,
-                'sysadmin': u.role == 'ROLE_ADMIN'
+                'sysadmin': u.role == 'ROLE_ADMIN',
+                'state': tr.user_state(u.status)
             }
+
+            if u.apiKey:
+                self.warnings.append("apiKey set for user " + un['id'])
             
             created = self.action.user_create(**un)
             self.user_keys[str(u._id)] = created['apikey']
@@ -418,7 +445,7 @@ class Process(object):
                     'role': 'admin'
                 };
  
-                self.action.organization_member_create(**om)
+                m = self.action.organization_member_create(**om)
   
         #
         #    // TODO Dla dostawców: 
@@ -439,7 +466,7 @@ class Process(object):
             return None
     
     def _update_known_keys(self, prefix, arr):
-        arr = (prefix + '.' + i for i in arr)
+        arr = [prefix + '.' + i for i in arr]
         self.known_keys = self.known_keys.union(arr)
         
     def _mark_unknown_keys(self, prefix, obj):

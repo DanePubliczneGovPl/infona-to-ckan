@@ -92,7 +92,7 @@ def _(text):
         return None 
     return text
 
-def package_license(p, license_text, errors):
+def package_license(p, license_text):
     license_text = license_text.strip()
     if license_text in [u"Bez ograniczeń", u"bez ograniczeń ", u"bez ograniczeń", u"bezograniczeń"] or not license_text:
         return
@@ -110,6 +110,21 @@ def package_license(p, license_text, errors):
         u"Bez ograniczeń pod warunkiem podania źródła informacji"]:
         p['license_condition_source'] = True
         return
+
+    if license_text == u'Ponowne wykorzystywanie udost\u0119pnionej lub przekazanej informacji publicznej wymaga zachowania nast\u0119puj\u0105cych warunk\xf3w:\r\n\u2022informacja publiczna musi zawiera\u0107 wzmiank\u0119 o \u017ar\xf3dle jej pozyskania poprzez podanie pe\u0142nej nazwy Urz\u0119du Komunikacji Elektronicznej lub nazwy skr\xf3conej - UKE;\r\n\u2022nale\u017cy poda\u0107 dat\u0119 wytworzenia oraz pozyskania informacji publicznej;\r\n\u2022pozyskana tre\u015b\u0107 informacji publicznej nie mo\u017ce by\u0107 modyfikowana;\r\n\u2022je\u017celi tre\u015b\u0107 pozyskanej informacji publicznej lub jej fragment, ma stanowi\u0107 cz\u0119\u015b\u0107 ca\u0142o\u015bci, nale\u017cy j\u0105 zamie\u015bci\u0107 w tek\u015bcie w formie cytatu wraz z przypisem informuj\u0105cym o \u017ar\xf3dle pochodzenia lub odpowiedniego dla formy wykorzystania \u2013 oznaczenia podobnego.\r\n\r\nUrz\u0105d Komunikacji Elektronicznej odpowiada za przekazywane informacje publiczne, je\u017celi ich ponowne wykorzystywanie spe\u0142nia wy\u017cej okre\u015blone warunki.':
+        pass # TODO
+
+    if license_text == u'Ponowne wykorzystywanie udost\u0119pnionej lub przekazanej informacji publicznej wymaga zachowania nast\u0119puj\u0105cych warunk\xf3w:\r\n\u2022informacja publiczna musi zawiera\u0107 wzmiank\u0119 o \u017ar\xf3dle jej pozyskania poprzez podanie pe\u0142nej nazwy Urz\u0119du Komunikacji Elektronicznej lub nazwy skr\xf3conej - UKE;\r\n\u2022nale\u017cy poda\u0107 dat\u0119 wytworzenia oraz pozyskania informacji publicznej;\r\n\u2022pozyskana tre\u015b\u0107 informacji publicznej nie mo\u017ce by\u0107 modyfikowana;\r\n\u2022je\u017celi tre\u015b\u0107 pozyskanej informacji publicznej lub jej fragment, ma stanowi\u0107 cz\u0119\u015b\u0107 ca\u0142o\u015bci, nale\u017cy j\u0105 zamie\u015bci\u0107 w tek\u015bcie w formie cytatu wraz z przypisem informuj\u0105cym o \u017ar\xf3dle pochodzenia lub odpowiedniego dla formy wykorzystania \u2013 oznaczenia podobnego.\r\n\r\nUrz\u0105d Komunikacji Elektronicznej odpowiada za przekazywane informacje publiczne, je\u017celi ich ponowne wykorzystywanie spe\u0142nia wy\u017cej okre\u015blone warunki.':
+        pass # TODO
+
+    if license_text == u'Ponowne wykorzystywanie udost\u0119pnionej lub przekazanej informacji publicznej wymaga zachowania nast\u0119puj\u0105cych warunk\xf3w: \u2022informacja publiczna musi zawiera\u0107 wzmiank\u0119 o \u017ar\xf3dle jej pozyskania poprzez podanie pe\u0142nej nazwy Urz\u0119du Komunikacji Elektronicznej lub nazwy skr\xf3conej - UKE; \u2022nale\u017cy poda\u0107 dat\u0119 wytworzenia oraz pozyskania informacji publicznej; \u2022pozyskana tre\u015b\u0107 informacji publicznej nie mo\u017ce by\u0107 modyfikowana; \u2022je\u017celi tre\u015b\u0107 pozyskanej informacji publicznej lub jej fragment, ma stanowi\u0107 cz\u0119\u015b\u0107 ca\u0142o\u015bci, nale\u017cy j\u0105 zamie\u015bci\u0107 w tek\u015bcie w formie cytatu wraz z przypisem informuj\u0105cym o \u017ar\xf3dle pochodzenia lub odpowiedniego dla formy wykorzystania \u2013 oznaczenia podobnego. Urz\u0105d Komunikacji Elektronicznej odpowiada za przekazywane informacje publiczne, je\u017celi ich ponowne wykorzystywanie spe\u0142nia wy\u017cej okre\u015blone warunki.':
+        pass # TODO
+
+    if license_text == u'Podmioty pobieraj\u0105ce t\u0119 informacj\u0119 w celu jej ponownego wykorzystywania s\u0105 zobowi\u0105zane do:\r\n1.\tpoinformowania o \u017ar\xf3dle, czasie wytworzenia i pozyskania informacji publicznej, poprzez podanie pe\u0142nej nazwy Ministerstwa Finans\xf3w lub nazwy skr\xf3conej \u2013 MF;\r\n2.\tniemodyfikowania pozyskanej tre\u015bci informacji publicznej;\r\n3.\tzamieszczenia jej w tre\u015bci w formie cytatu wraz z przypisem informuj\u0105cym o \u017ar\xf3dle pochodzenia (Ministerstwo Finans\xf3w, MF) lub z innym, odpowiednim dla formy wykorzystania oznaczeniem w przypadku przetwarzania pozyskanej informacji publicznej.':
+        pass # TODO
+
+    if license_text == u'http://www.uke.gov.pl/ponowne-wykorzystywanie-informacji-publicznej-13718':
+        pass # TODO
 
     raise MappingException("Untranslated reuse restrictions: " + license_text)
 
