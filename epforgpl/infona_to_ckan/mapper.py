@@ -150,6 +150,6 @@ def alphaname(name):
 
 def alphanamepl(name):
     name = re.sub('^\s+|[\s\.]+$', '', name.lower()) # Trim
-    name = re.sub('\\W', '_', name) # Clear other chars
+    name = re.sub('/\\W/u', '_', name) # Clear other chars
     
     return name

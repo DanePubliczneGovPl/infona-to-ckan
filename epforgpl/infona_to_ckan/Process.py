@@ -46,13 +46,13 @@ class ActionWrapperDev(object):
         caction = getattr(self._ckan.action, name)
                
         def action(**kwargs):
-            debug_action = name + ': ' + json.dumps(kwargs, cls=MockEncoder) 
+            debug_action = name + ': ' + json.dumps(kwargs, cls=MockEncoder) + ' ' + self._ckan.apikey
             print debug_action
             
             # TODO catch error
             if not config.dev or config.perform_update:
                 try:
-                    if name.endswith('_create') and kwargs.get('id', None) and name != 'organization_member_create':
+                    if name.endswith('_create') and kwargs.get('id', None) and name != 'organization_member_create' and name != 'member_create':
                         show = getattr(self._ckan.action, name.replace('_create', '_show'))
                         update = getattr(self, name.replace('_create', '_update'))
                         try:
@@ -137,12 +137,11 @@ class Process(object):
         
         self.action = ActionWrapperDev(self)
 
-        # TODO
         self._category()
         self._other_vocabularies()
         self._organization()
         self._user()
-        #self._pullUsers()
+        # self._pullUsers()
         self._package()
         self._resource()
         
@@ -184,8 +183,9 @@ class Process(object):
     def _category(self):
         print 'Processing categories..'
         # http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.create.vocabulary_create
-        
-        categories = self.db.category.find()
+
+        categories = list(self.db.category.find())
+        self.categories = map(lambda c: c['_id'], categories)
 
         category_map = {
             "administracja_publiczna": {
@@ -233,7 +233,7 @@ class Process(object):
             g = {
                 'name': cid,
                 'id': cid,
-                'type': 'category',
+                # 'type': 'group',
                 'title': category_map[cid]['title'],
                 'image_upload': open(icon_path),
                 #'color': category_map[cid]['color'],
@@ -248,9 +248,19 @@ class Process(object):
 
         v = {
             'name': 'update_frequencies',
-            'tags': map(lambda u: {'name': tr.alphaname(u)}, items )
+            'tags': map(lambda u: {'name': tr.alphaname(u)}, items)
         }
-        
+        self.action.vocabulary_create(**v)
+
+        items = self.db.resourceUnit.distinct('metadata.types')
+
+        items = map(lambda u: tr.alphanamepl(u), items)
+        items = map(lambda u: {'name': u}, set(items))
+
+        v = {
+            'name': 'resource_types',
+            'tags': items
+        }
         self.action.vocabulary_create(**v)
         
     def _organization(self):
@@ -307,6 +317,7 @@ class Process(object):
                 'url': ir.metadata.webPageUrl,
                 'update_frequency': tr.alphaname(ir.metadata.updateFrequency),
                 'category': ir.metadata.categoryId,
+                #'groups': [{'id': 'biznes_gospodarka'}]
             }
 
             try:
@@ -368,7 +379,6 @@ class Process(object):
             ])
                 
         for rud in self.db.resourceUnit.find():
-            # TODO adding by specific user
             ru = Bunch(rud)
             self._mark_unknown_keys('resourceUnit', rud)
             if ru.metadata.additionalMetadata:
@@ -382,7 +392,6 @@ class Process(object):
                 'name': ru.metadata.title,
                 'format': ru.metadata.fileType,
                 'mimetype': self.catch(tr.mimetype, ru.metadata.fileType),
-                
                 'created': tr.ts(ru.creationTimestamp),
                 'last_modified': tr.ts(ru.lastUpdateTimestamp), # TODO check timezone in ckan
                 
@@ -486,6 +495,16 @@ class Process(object):
                 };
  
                 m = self.action.organization_member_create(**om)
+
+                for category in self.categories:
+                    m = {
+                        'id': category,
+                        'object': created['id'],
+                        'object_type': 'user',
+                        'capacity': 'member'
+                    }
+                    self.action.member_create(**m)
+
   
         #
         #    // TODO Dla dostawców: 
