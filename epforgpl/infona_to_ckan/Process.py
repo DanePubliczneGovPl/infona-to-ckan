@@ -140,8 +140,10 @@ class Process(object):
         self._category()
         self._other_vocabularies()
         self._organization()
+
         self._user()
         # self._pullUsers()
+
         self._package()
         self._resource()
         
@@ -284,7 +286,7 @@ class Process(object):
             
             self.action.organization_create(**org)
             self.organization_count += 1
-        
+
     def _package(self):
         print '\nProcessing packages..'
         # http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.create.package_create
@@ -335,7 +337,15 @@ class Process(object):
             #
      
             with api_key(self.ckan, self.user_keys[ir.lastUpdatedBy]):
-                ret = self.action.package_create(**p)
+                try:
+                    ret = self.ckan.action.package_show(id=p['name'])
+                    p['id'] = ret['id']
+                    if config.update_existing:
+                        ret = self.action.package_update(**p)
+
+                except ckanapi.errors.NotFound:
+                    ret = self.action.package_create(**p)
+
                 if ret:
                     self.package_id_map[str(ir._id)] = ret['id']
      
@@ -405,7 +415,7 @@ class Process(object):
             if ru.metadata.contentSourceClassification == 'UPLOADED':
                 local_path = self._download_file(ru.metadata.localFileContentId, ru.metadata.fileName)
                 r.update({
-              # TODO      'upload': open(local_path),
+                    'upload': open(local_path),
                     'url': '', # Will be autopopulated. Empty string is needed due to bug. Otherwise 'Missing value' is thrown
                 })
             
