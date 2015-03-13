@@ -82,6 +82,11 @@ class ActionWrapperDev(object):
                     self._process.errors.append(debug_action + "\n\t" + str(e))
 
                     print str(e)
+
+                except ckanapi.errors.CKANAPIError as e:
+                    # TODO 500tki rejestrujemy i idziemy dalej
+                    print str(e)
+                    self._process.errors.append(debug_action + "\n\t" + str(e))
                  
         return action
     
@@ -238,7 +243,7 @@ class Process(object):
                 # 'type': 'group',
                 'title': category_map[cid]['title'],
                 'image_upload': open(icon_path),
-                #'color': category_map[cid]['color'],
+                'color': category_map[cid]['color'],
             }
         
             self.action.group_create(**g)
@@ -398,7 +403,6 @@ class Process(object):
                 'id': str(ru._id),
                 'package_id': self.package_id_map.get(ru.informationResourceId, None),
                 'state': tr.state_ru(ru.status),
-                'revision_id': ru.version,
                 'name': ru.metadata.title,
                 'format': ru.metadata.fileType,
                 'mimetype': self.catch(tr.mimetype, ru.metadata.fileType),
