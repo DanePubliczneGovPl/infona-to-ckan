@@ -201,7 +201,7 @@ class Process(object):
             },
             "biznes_gospodarka": {
                 'title_i18n-pl': 'Biznes i Gospodarka',
-                'title_i18n-en': 'Public Administration',
+                'title_i18n-en': 'Economy',
                 'color': '#24485f',
             },
             "budzet_finanse_publiczne": {
