@@ -84,9 +84,8 @@ class ActionWrapperDev(object):
                     print str(e)
 
                 except ckanapi.errors.CKANAPIError as e:
-                    # TODO 500tki rejestrujemy i idziemy dalej
-                    print str(e)
-                    self._process.errors.append(debug_action + "\n\t" + str(e))
+                    print str(e.extra_msg)
+                    self._process.errors.append(debug_action + "\n\t" + str(e.extra_msg))
                  
         return action
     
@@ -111,7 +110,7 @@ class ActionWrapperProduction(object):
                 return caction(**kwargs)
             except (ckanapi.errors.ValidationError, ckanapi.errors.NotFound) as e:
                 self._process.errors.append(debug_action + "\n\t" + str(e))
-             
+
         return action 
  
 
@@ -147,7 +146,7 @@ class Process(object):
         self._organization()
 
         self._user()
-        # self._pullUsers()
+        #self._pullUsers()
 
         self._package()
         self._resource()
@@ -196,39 +195,48 @@ class Process(object):
 
         category_map = {
             "administracja_publiczna": {
-                'title': 'Administracja Publiczna',
+                'title_i18n-pl': 'Administracja Publiczna',
+                'title_i18n-en': 'Public Administration',
                 'color': '#4b77be',
             },
             "biznes_gospodarka": {
-                'title': 'Biznes i Gospodarka',
+                'title_i18n-pl': 'Biznes i Gospodarka',
+                'title_i18n-en': 'Public Administration',
                 'color': '#24485f',
             },
             "budzet_finanse_publiczne": {
-                'title': 'Budżet i Finanse Publiczne',
+                'title_i18n-pl': 'Budżet i Finanse Publiczne',
+                'title_i18n-en': 'Public Finance',
                 'color': '#6c7a89',
             },
             "nauka_oswiata": {
-                'title': 'Nauka i Oświata',
+                'title_i18n-pl': 'Nauka i Oświata',
+                'title_i18n-en': 'Education',
                 'color': '#674172',
             },
             "praca_pomoc_spoleczna": {
-                'title': 'Praca i Pomoc Społeczna',
+                'title_i18n-pl': 'Praca i Pomoc Społeczna',
+                'title_i18n-en': 'Employment and Civil Service',
                 'color': '#bf3607',
             },
             "rolnictwo": {
-                'title': 'Rolnictwo',
+                'title_i18n-pl': 'Rolnictwo',
+                'title_i18n-en': 'Agriculture',
                 'color': '#3a539b',
             },
             "spoleczenstwo": {
-                'title': 'Społeczeństwo',
+                'title_i18n-pl': 'Społeczeństwo',
+                'title_i18n-en': 'Society',
                 'color': '#d35400',
             },
             "sport_turystyka": {
-                'title': 'Sport i Turystyka',
+                'title_i18n-pl': 'Sport i Turystyka',
+                'title_i18n-en': 'Sports and Tourism',
                 'color': '#2574a9',
             },
             "srodowisko": {
-                'title': 'Środowisko',
+                'title_i18n-pl': 'Środowisko',
+                'title_i18n-en': 'Environment',
                 'color': '#138435',
             }
         }
@@ -241,10 +249,9 @@ class Process(object):
                 'name': cid,
                 'id': cid,
                 # 'type': 'group',
-                'title': category_map[cid]['title'],
                 'image_upload': open(icon_path),
-                'color': category_map[cid]['color'],
             }
+            g.update(category_map[cid])
         
             self.action.group_create(**g)
 
@@ -255,13 +262,11 @@ class Process(object):
 
         v = {
             'name': 'update_frequencies',
-            'tags': map(lambda u: {'name': tr.alphaname(u)}, items)
+            'tags': map(lambda u: {'name': u}, items)
         }
         self.action.vocabulary_create(**v)
 
         items = self.db.resourceUnit.distinct('metadata.types')
-
-        items = map(lambda u: tr.alphanamepl(u), items)
         items = map(lambda u: {'name': u}, set(items))
 
         v = {
@@ -273,22 +278,43 @@ class Process(object):
     def _organization(self):
         print '\nProcessing organizations..'
         # http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.create.organization_create
+
+        self._update_known_keys('publisher', [
+            '_id', '_class', 'status', 'metadata'
+            # Skipping fields below
+            'createdBy', "creationTimestamp", "indexed", "lastUpdateTimestamp", "lastUpdatedBy", 'version'
+            ])
+        self._update_known_keys('publisher.metadata', [
+            'name', "street", "postalCode", "city",
+            "webPage", "contactEmail", "contactPhone", "contactFax", "regon","ePuap",
+            # Skip
+            "country",
+            ])
         
-        for p in self.db.publisher.find():
-            p = Bunch(p)                
+        for pd in self.db.publisher.find():
+            p = Bunch(pd)
+            self._mark_unknown_keys('publisher', pd)
+            if p.metadata.additionalMetadata:
+                self._add_unknown_key('publisher.metadata.additionalMetadata', p.metadata.additionalMetadata)
+
             org = {
                 'id': str(p._id),
                 'name': tr.alphaname(p.metadata.name),
                 'title': p.metadata.name,
                 'image_url': self.catch(tr.org_image, p.metadata.name.strip()),
-                'state': tr.org_state(p.status)
+                'state': tr.org_state(p.status),
+
+                'website': p.metadata.webPage,
+                'fax': p.metadata.contactFax or (' ' if config.dev else ''),
+                'tel': p.metadata.contactPhone,
+                'address_street': p.metadata.street,
+                'address_city': p.metadata.city,
+                'address_postal_code': p.metadata.postalCode,
+                'regon': p.metadata.regon or (' ' if config.dev else ''),
+                'epuap': p.metadata.ePuap or (' ' if config.dev else ''),
+                'email': p.metadata.contactEmail
             }
-    
-            #    //TODO p.metadata. czy tego wymaga ustawa?
-            #    // place, street, postalCode, city, country,
-            #    // webPage, contactEmail, contactPhone, contactFax,
-            #    // regon, ePuap
-            
+
             self.action.organization_create(**org)
             self.organization_count += 1
 
@@ -298,7 +324,7 @@ class Process(object):
         
         self._update_known_keys('informationResource', [
             '_id', 'metadata', 'publisherId', 'version', 'status',
-            'creationTimestamp', 'lastUpdateTimestamp', 'createdBy', 'lastUpdateBy',
+            'creationTimestamp', 'lastUpdateTimestamp', 'createdBy', 'lastUpdatedBy',
             # Skipping fields below
             'indexed', '_class', 'metadata._id', 'metadata.additionalMetadata', 'publishedBy', 'publicationDate'
             ])
@@ -322,7 +348,7 @@ class Process(object):
                 'state': tr.ir_state(ir.status),
                 'private': tr.private_status(ir.status),
                 'url': ir.metadata.webPageUrl,
-                'update_frequency': tr.alphaname(ir.metadata.updateFrequency),
+                'update_frequency': ir.metadata.updateFrequency,
                 'category': ir.metadata.categoryId,
                 #'groups': [{'id': 'biznes_gospodarka'}]
             }
@@ -331,8 +357,15 @@ class Process(object):
                 tr.package_license(p, ir.metadata.licensingInformation)
             except tr.MappingException as ex:
                 self.warnings.append(str(ex) + ' in package ' + p['name'])
-            
-            p['tags'] = map(lambda t: {'name': tr.alphaname(t)}, ir.metadata.tags)
+
+            tags = []
+            for t in ir.metadata.tags:
+                for tt in t.replace(';', ',').split(','):
+                    tt = tt.strip()
+                    if tt:
+                        tags.append({'name': tt})
+
+            p['tags'] = tags
     
             #    // TODO lastUpdateTimestamp
             #    // TODO lastUpdateBy
@@ -388,7 +421,7 @@ class Process(object):
         self._update_known_keys('resourceUnit.metadata', [
             'title', 'informationResourceId', 'status', 'version',
             'sourceUrl', 'contentSourceClassification', 
-            'localFileContentId', 'fileName', 'fileType',
+            'localFileContentId', 'fileName', 'fileType', 'types',
             # warn
             'licensingInformation', 'resourceLicensingInherit'
             ])
@@ -408,8 +441,10 @@ class Process(object):
                 'mimetype': self.catch(tr.mimetype, ru.metadata.fileType),
                 'created': tr.ts(ru.creationTimestamp),
                 'last_modified': tr.ts(ru.lastUpdateTimestamp), # TODO check timezone in ckan
-                
             }
+            if ru.metadata.types:
+                r['resource_type'] = ','.join(ru.metadata.types)
+
             if ru.status == 'DRAFT':
                 self.warnings.append('WARNING: JIP w CKAN nie ma statusu DRAFT, bedzie widoczny dla wszystkich: ' + ru.metadata.title)
 
@@ -457,11 +492,12 @@ class Process(object):
         self._update_known_keys('user', [
             '_id', 'email', 'role', 'publisherId', 'status', 'metadata',
             # Skipping fields below
-            'indexed', '_class', 'metadata._id', 'metadata.additionalMetadata', 'lastUpdatedBy',
-            'normalizedEmail', 'password', 'creationTimestamp', 'apiKey'
+            'editor', 'indexed', '_class', 'metadata._id', 'metadata.additionalMetadata', 'lastUpdatedBy',
+            'normalizedEmail', 'password', 'creationTimestamp', 'lastUpdateTimestamp', 'createdBy', 'apiKey',
+            'metadata.locale', 'lastPasswordResetTimestamp', 'metadata.highContrast', 'version'
             ])
         self._update_known_keys('user.metadata', [
-            'firstName', 'lastName'
+            'firstName', 'lastName', 'phone', 'office'
             ])                
         
         for ud in self.db.user.find():
@@ -485,12 +521,15 @@ class Process(object):
             un = {
                 'id': str(u._id),
                 'name': name, 
-                'email': u.email, # TODO login with email
+                'email': u.email,
                 'password': config.dev_password if config.dev else uuid.uuid4(),
                 'fullname': fullname,
                 'sysadmin': u.role == 'ROLE_ADMIN',
                 'state': tr.user_state(u.status)
             }
+
+            if u.metadata.office or u.metadata.phone:
+                un['about'] = json.dumps({'official_position': u.metadata.office, 'office_phone': u.metadata.phone})
 
             if u.apiKey:
                 self.warnings.append("apiKey set for user " + un['id'])
