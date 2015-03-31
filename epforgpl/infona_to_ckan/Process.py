@@ -548,27 +548,7 @@ class Process(object):
                 };
  
                 m = self.action.organization_member_create(**om)
-
-                for category in self.categories:
-                    m = {
-                        'id': category,
-                        'object': created['id'],
-                        'object_type': 'user',
-                        'capacity': 'member'
-                    }
-                    self.action.member_create(**m)
-
-  
-        #
-        #    // TODO Dla dostawców: 
-            # pełną nazwę urzędu obsługującego dostawcę;
-            # 2)  określenie nazwy profilu;
-            # 3)  imię i nazwisko; 
-            # 4)  stanowisko służbowe; 
-            # 5)  służbowy numer telefonu oraz 
-            # adres poczty elektronicznej.
-        #    // metadata.phone, metadata.office
-        
+          
     def catch(self, fun, *args):
         try:
             return fun(*args)
