@@ -421,9 +421,11 @@ class Process(object):
         self._update_known_keys('resourceUnit.metadata', [
             'title', 'informationResourceId', 'status', 'version',
             'sourceUrl', 'contentSourceClassification', 
-            'localFileContentId', 'fileName', 'fileType', 'types',
+            'localFileContentId', 'fileName', 'types',
             # warn
             'licensingInformation', 'resourceLicensingInherit'
+            # skip
+            'fileType'
             ])
                 
         for rud in self.db.resourceUnit.find():
@@ -437,8 +439,6 @@ class Process(object):
                 'package_id': self.package_id_map.get(ru.informationResourceId, None),
                 'state': tr.state_ru(ru.status),
                 'name': ru.metadata.title,
-                'format': ru.metadata.fileType,
-                'mimetype': self.catch(tr.mimetype, ru.metadata.fileType),
                 'created': tr.ts(ru.creationTimestamp),
                 'last_modified': tr.ts(ru.lastUpdateTimestamp), # TODO check timezone in ckan
             }
@@ -548,7 +548,7 @@ class Process(object):
                 };
  
                 m = self.action.organization_member_create(**om)
-          
+
     def catch(self, fun, *args):
         try:
             return fun(*args)
