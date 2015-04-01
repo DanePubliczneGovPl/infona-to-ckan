@@ -201,12 +201,12 @@ class Process(object):
             },
             "biznes_gospodarka": {
                 'title_i18n-pl': 'Biznes i Gospodarka',
-                'title_i18n-en': 'Economy',
+                'title_i18n-en': 'Business and Economy',
                 'color': '#24485f',
             },
             "budzet_finanse_publiczne": {
                 'title_i18n-pl': 'Budżet i Finanse Publiczne',
-                'title_i18n-en': 'Public Finance',
+                'title_i18n-en': 'Budget and Public Finance',
                 'color': '#6c7a89',
             },
             "nauka_oswiata": {
@@ -216,7 +216,7 @@ class Process(object):
             },
             "praca_pomoc_spoleczna": {
                 'title_i18n-pl': 'Praca i Pomoc Społeczna',
-                'title_i18n-en': 'Employment and Civil Service',
+                'title_i18n-en': 'Employment and Social Assistance',
                 'color': '#bf3607',
             },
             "rolnictwo": {
