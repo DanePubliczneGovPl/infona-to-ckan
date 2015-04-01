@@ -423,7 +423,7 @@ class Process(object):
             'sourceUrl', 'contentSourceClassification', 
             'localFileContentId', 'fileName', 'types',
             # warn
-            'licensingInformation', 'resourceLicensingInherit'
+            'licensingInformation', 'resourceLicensingInherit',
             # skip
             'fileType'
             ])
