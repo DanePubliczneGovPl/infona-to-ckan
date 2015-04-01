@@ -529,7 +529,7 @@ class Process(object):
             }
 
             if u.metadata.office or u.metadata.phone:
-                un['about'] = json.dumps({'official_position': u.metadata.office, 'office_phone': u.metadata.phone})
+                un['about'] = json.dumps({'official_position': u.metadata.office, 'official_phone': u.metadata.phone})
 
             if u.apiKey:
                 self.warnings.append("apiKey set for user " + un['id'])
