@@ -117,7 +117,7 @@ class ActionWrapperProduction(object):
 class Process(object):
     def __init__(self):
         self.errors = []
-        self.warnings = set()
+        self.warnings = []
         self.user_count = 0
         self.organization_count = 0
         self.package_count = 0
@@ -159,7 +159,7 @@ class Process(object):
     def summary(self):
         if self.warnings:
             print '\n ======== WARNINGS ======='
-            for w in self.warnings:
+            for w in set(self.warnings):
                 print w
         
         if self.unprocessed_keys:
