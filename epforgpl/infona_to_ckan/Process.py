@@ -117,7 +117,7 @@ class ActionWrapperProduction(object):
 class Process(object):
     def __init__(self):
         self.errors = []
-        self.warnings = []
+        self.warnings = set()
         self.user_count = 0
         self.organization_count = 0
         self.package_count = 0
@@ -297,6 +297,9 @@ class Process(object):
             if p.metadata.additionalMetadata:
                 self._add_unknown_key('publisher.metadata.additionalMetadata', p.metadata.additionalMetadata)
 
+            if p.status == 'DRAFT':
+                self.warnings.append(u'Dodaję organizację o statusie DRAFT: ' + p.metadata.name)
+
             org = {
                 'id': str(p._id),
                 'name': tr.alphaname(p.metadata.name),
@@ -435,12 +438,14 @@ class Process(object):
                 self._add_unknown_key('resourceUnit.metadata.additionalMetadata', ru.metadata.additionalMetadata)
             
             r = {
-                'id': str(ru._id),
+                #'id': str(ru._id),
                 'package_id': self.package_id_map.get(ru.informationResourceId, None),
                 'state': tr.state_ru(ru.status),
                 'name': ru.metadata.title,
+                # 'format': ru.metadata.fileType,
+                # 'mimetype': self.catch(tr.mimetype, ru.metadata.fileType),
                 'created': tr.ts(ru.creationTimestamp),
-                'last_modified': tr.ts(ru.lastUpdateTimestamp), # TODO check timezone in ckan
+                'last_modified': tr.ts(ru.lastUpdateTimestamp),
             }
             if ru.metadata.types:
                 r['resource_type'] = ','.join(ru.metadata.types)
@@ -449,7 +454,7 @@ class Process(object):
                 self.warnings.append('WARNING: JIP w CKAN nie ma statusu DRAFT, bedzie widoczny dla wszystkich: ' + ru.metadata.title)
 
             if ru.metadata.licensingInformation:
-                self.warnings.append('resource[' + r['id'] + ']' + u': Pomijam licencję specyficzną dla resource: ' + ru.metadata.licensingInformation)
+                self.warnings.append(u'Pomijam licencję specyficzną dla resource: ' + ru.metadata.licensingInformation)
             
             if ru.metadata.contentSourceClassification == 'UPLOADED':
                 local_path = self._download_file(ru.metadata.localFileContentId, ru.metadata.fileName)
