@@ -68,7 +68,7 @@ class ActionWrapperDev(object):
                     return caction(**kwargs)
                 except ckanapi.errors.ValidationError as e:
                     if name == 'vocabulary_create' and u'That vocabulary name is already in use.' in e.error_dict.get('name',[]):
-                        self._process.warnings.append('Skipping ' + str(e))
+                        self._process.warnings.append('Skipping ' + unicode(e))
                     elif name == 'package_create' and u'That URL is already in use.' in e.error_dict.get('name',[]): 
                         self._process.errors.append(debug_action
                                                     + "\n\tURL in use: " + kwargs['url']
@@ -160,7 +160,7 @@ class Process(object):
         if self.warnings:
             print '\n ======== WARNINGS ======='
             for w in set(self.warnings):
-                print w
+                print unicode(w)
         
         if self.unprocessed_keys:
             print '\n ======== UNPROCESSED KEYS ======='
@@ -174,7 +174,7 @@ class Process(object):
         if self.errors:
             print '\n ======== ERRORS ======='
             for w in self.errors:
-                print w
+                print unicode(w)
                 
             print '\nFound ' + str(len(self.errors)) +  ' errors!'        
         else:
@@ -195,7 +195,7 @@ class Process(object):
 
         category_map = {
             "administracja_publiczna": {
-                'title_i18n-pl': 'Administracja Publiczna',
+                'title_i18n-pl': u'Administracja Publiczna',
                 'title_i18n-en': 'Public Administration',
                 'color': '#4b77be',
             },
@@ -205,17 +205,17 @@ class Process(object):
                 'color': '#24485f',
             },
             "budzet_finanse_publiczne": {
-                'title_i18n-pl': 'Budżet i Finanse Publiczne',
+                'title_i18n-pl': u'Budżet i Finanse Publiczne',
                 'title_i18n-en': 'Budget and Public Finance',
                 'color': '#6c7a89',
             },
             "nauka_oswiata": {
-                'title_i18n-pl': 'Nauka i Oświata',
+                'title_i18n-pl': u'Nauka i Oświata',
                 'title_i18n-en': 'Education',
                 'color': '#674172',
             },
             "praca_pomoc_spoleczna": {
-                'title_i18n-pl': 'Praca i Pomoc Społeczna',
+                'title_i18n-pl': u'Praca i Pomoc Społeczna',
                 'title_i18n-en': 'Employment and Social Assistance',
                 'color': '#bf3607',
             },
@@ -225,7 +225,7 @@ class Process(object):
                 'color': '#3a539b',
             },
             "spoleczenstwo": {
-                'title_i18n-pl': 'Społeczeństwo',
+                'title_i18n-pl': u'Społeczeństwo',
                 'title_i18n-en': 'Society',
                 'color': '#d35400',
             },
@@ -235,7 +235,7 @@ class Process(object):
                 'color': '#2574a9',
             },
             "srodowisko": {
-                'title_i18n-pl': 'Środowisko',
+                'title_i18n-pl': u'Środowisko',
                 'title_i18n-en': 'Environment',
                 'color': '#138435',
             }
@@ -259,12 +259,8 @@ class Process(object):
         print '\nProcessing other vocabularies..'
         
         items = self.db.informationResource.distinct('metadata.updateFrequency')
+        self.warnings.append(u"Ensure updateFrequency list is complete: " + unicode(items))
 
-        v = {
-            'name': 'update_frequencies',
-            'tags': map(lambda u: {'name': u}, items)
-        }
-        self.action.vocabulary_create(**v)
 
         items = self.db.resourceUnit.distinct('metadata.types')
         items = map(lambda u: {'name': u}, set(items))
@@ -298,7 +294,7 @@ class Process(object):
                 self._add_unknown_key('publisher.metadata.additionalMetadata', p.metadata.additionalMetadata)
 
             if p.status == 'DRAFT':
-                self.warnings.append(u'Dodaję organizację o statusie DRAFT: ' + p.metadata.name)
+                self.warnings.append(u'Dodaję organizację o statusie DRAFT: ' + unicode(str(p.metadata.name)))
 
             org = {
                 'id': str(p._id),
@@ -317,6 +313,14 @@ class Process(object):
                 'epuap': p.metadata.ePuap or (' ' if config.dev else ''),
                 'email': p.metadata.contactEmail
             }
+
+            if config.dev: # Bo CKAN nie wykryje
+                if not p.metadata.contactFax:
+                    self.errors.append('Missing fax in ' + org['name'])
+                if not p.metadata.regon:
+                    self.errors.append('Missing regon in ' + org['name'])
+                if not p.metadata.ePuap:
+                    self.errors.append('Missing ePuap in ' + org['name'])
 
             self.action.organization_create(**org)
             self.organization_count += 1
@@ -359,7 +363,7 @@ class Process(object):
             try:
                 tr.package_license(p, ir.metadata.licensingInformation)
             except tr.MappingException as ex:
-                self.warnings.append(str(ex) + ' in package ' + p['name'])
+                self.warnings.append(unicode(ex) + ' in package ' + unicode(p['name']))
 
             tags = []
             for t in ir.metadata.tags:
@@ -369,13 +373,6 @@ class Process(object):
                         tags.append({'name': tt})
 
             p['tags'] = tags
-    
-            #    // TODO lastUpdateTimestamp
-            #    // TODO lastUpdateBy
-            #    // TODO publicationDate
-            #    // TODO creationDate
-            #    // TODO creationBy
-            #
      
             with api_key(self.ckan, self.user_keys[ir.lastUpdatedBy]):
                 try:
@@ -457,24 +454,20 @@ class Process(object):
                 self.warnings.append(u'Pomijam licencję specyficzną dla resource: ' + ru.metadata.licensingInformation)
             
             if ru.metadata.contentSourceClassification == 'UPLOADED':
-                local_path = self._download_file(ru.metadata.localFileContentId, ru.metadata.fileName)
-                r.update({
-                    'upload': open(local_path),
-                    'url': '', # Will be autopopulated. Empty string is needed due to bug. Otherwise 'Missing value' is thrown
-                })
+                if ru.metadata.localFileContentId == None:
+                    self.errors.append('Wrong file, mising contentId for ' + str(ru._id))
+                    continue
+
+                else:
+                    local_path = self._download_file(ru.metadata.localFileContentId, ru.metadata.fileName)
+                    r.update({
+                        'upload': open(local_path),
+                        'url': '', # Will be autopopulated. Empty string is needed due to bug. Otherwise 'Missing value' is thrown
+                    })
             
             elif ru.metadata.contentSourceClassification == 'FROM_REMOTE_URL':
                 r.update({
                     'url': ru.metadata.sourceUrl,
-
-                # FROM_REMOTE_URL
-                # types
-                # sourceUrl
-                # fileType
-         
-                # UPLOADED:
-                # types: ['raport', 'tabela', 'tekst' ]
-
                 })
             else:
                 self._add_unknown_key('resourceUnit.metadata.contentSourceClassification', ru.metadata.contentSourceClassification)
@@ -526,8 +519,8 @@ class Process(object):
             un = {
                 'id': str(u._id),
                 'name': name, 
-                'email': u.email,
-                'password': config.dev_password if config.dev else uuid.uuid4(),
+                'email': u.email.lower(),
+                'password': config.dev_password if config.dev else str(uuid.uuid4()),
                 'fullname': fullname,
                 'sysadmin': u.role == 'ROLE_ADMIN',
                 'state': tr.user_state(u.status)
