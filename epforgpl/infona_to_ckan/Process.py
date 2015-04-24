@@ -276,7 +276,7 @@ class Process(object):
         # http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.create.organization_create
 
         self._update_known_keys('publisher', [
-            '_id', '_class', 'status', 'metadata'
+            '_id', '_class', 'status', 'metadata', 
             # Skipping fields below
             'createdBy', "creationTimestamp", "indexed", "lastUpdateTimestamp", "lastUpdatedBy", 'version'
             ])
