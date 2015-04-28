@@ -1,4 +1,4 @@
-# encoding: utf-8
+# coding: utf-8
 import config
 import mapper as tr
 
@@ -195,47 +195,47 @@ class Process(object):
 
         category_map = {
             "administracja_publiczna": {
-                'title_i18n-pl': 'Administracja Publiczna',
+                'title_i18n-pl': u'Administracja Publiczna',
                 'title_i18n-en': 'Public Administration',
                 'color': '#4b77be',
             },
             "biznes_gospodarka": {
-                'title_i18n-pl': 'Biznes i Gospodarka',
+                'title_i18n-pl': u'Biznes i Gospodarka',
                 'title_i18n-en': 'Business and Economy',
                 'color': '#24485f',
             },
             "budzet_finanse_publiczne": {
-                'title_i18n-pl': 'Budżet i Finanse Publiczne',
+                'title_i18n-pl': u'Budżet i Finanse Publiczne',
                 'title_i18n-en': 'Budget and Public Finance',
                 'color': '#6c7a89',
             },
             "nauka_oswiata": {
-                'title_i18n-pl': 'Nauka i Oświata',
+                'title_i18n-pl': u'Nauka i Oświata',
                 'title_i18n-en': 'Education',
                 'color': '#674172',
             },
             "praca_pomoc_spoleczna": {
-                'title_i18n-pl': 'Praca i Pomoc Społeczna',
+                'title_i18n-pl': u'Praca i Pomoc Społeczna',
                 'title_i18n-en': 'Employment and Social Assistance',
                 'color': '#bf3607',
             },
             "rolnictwo": {
-                'title_i18n-pl': 'Rolnictwo',
+                'title_i18n-pl': u'Rolnictwo',
                 'title_i18n-en': 'Agriculture',
                 'color': '#3a539b',
             },
             "spoleczenstwo": {
-                'title_i18n-pl': 'Społeczeństwo',
+                'title_i18n-pl': u'Społeczeństwo',
                 'title_i18n-en': 'Society',
                 'color': '#d35400',
             },
             "sport_turystyka": {
-                'title_i18n-pl': 'Sport i Turystyka',
+                'title_i18n-pl': u'Sport i Turystyka',
                 'title_i18n-en': 'Sports and Tourism',
                 'color': '#2574a9',
             },
             "srodowisko": {
-                'title_i18n-pl': 'Środowisko',
+                'title_i18n-pl': u'Środowisko',
                 'title_i18n-en': 'Environment',
                 'color': '#138435',
             }
@@ -527,7 +527,7 @@ class Process(object):
                 'id': str(u._id),
                 'name': name, 
                 'email': u.email,
-                'password': config.dev_password if config.dev else uuid.uuid4(),
+                'password': str(uuid.uuid4()),
                 'fullname': fullname,
                 'sysadmin': u.role == 'ROLE_ADMIN',
                 'state': tr.user_state(u.status)
