@@ -462,7 +462,7 @@ class Process(object):
                     local_path = self._download_file(ru.metadata.localFileContentId, ru.metadata.fileName)
                     r.update({
                         'upload': open(local_path),
-                        'url': '', # Will be autopopulated. Empty string is needed due to bug. Otherwise 'Missing value' is thrown
+                        'url': ' ', # Will be autopopulated. Empty string is needed due to bug. Otherwise 'Missing value' is thrown
                     })
             
             elif ru.metadata.contentSourceClassification == 'FROM_REMOTE_URL':
