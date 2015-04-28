@@ -10,7 +10,6 @@ ckan = {
 }
 
 dev = True # false for production
-dev_password = 'Password1'
 perform_update = True
 update_existing = True
 

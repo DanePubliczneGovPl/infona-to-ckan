@@ -503,7 +503,10 @@ class Process(object):
             self._mark_unknown_keys('user', ud)
             if u.metadata.additionalMetadata:
                 self._add_unknown_key('user.metadata.additionalMetadata', u.metadata.additionalMetadata)
-            
+
+            if not u.publisherId and config.dev:
+                continue
+
             fullname = tr._((u.metadata.firstName or '') + ' ' + (u.metadata.lastName or '')) or 'Anonim'
             
             name = tr.alphaname(fullname)
@@ -520,7 +523,7 @@ class Process(object):
                 'id': str(u._id),
                 'name': name, 
                 'email': u.email.lower(),
-                'password': config.dev_password if config.dev else str(uuid.uuid4()),
+                'password': str(uuid.uuid4()),
                 'fullname': fullname,
                 'sysadmin': u.role == 'ROLE_ADMIN',
                 'state': tr.user_state(u.status)
