@@ -48,45 +48,42 @@ class ActionWrapperDev(object):
         def action(**kwargs):
             debug_action = name + ': ' + json.dumps(kwargs, cls=MockEncoder) + ' ' + self._ckan.apikey
             print debug_action
-            
-            # TODO catch error
-            if not config.dev or config.perform_update:
-                try:
-                    if name.endswith('_create') and kwargs.get('id', None) and name != 'organization_member_create' and name != 'member_create':
-                        show = getattr(self._ckan.action, name.replace('_create', '_show'))
-                        update = getattr(self, name.replace('_create', '_update'))
-                        try:
-                            show(id=kwargs['id'])
-                            if config.update_existing:
-                                return update(**kwargs)
-                            return None
-                                
-                        except ckanapi.errors.NotFound:
-                            return caction(**kwargs)
-                        
-                    
-                    return caction(**kwargs)
-                except ckanapi.errors.ValidationError as e:
-                    if name == 'vocabulary_create' and u'That vocabulary name is already in use.' in e.error_dict.get('name',[]):
-                        self._process.warnings.append('Skipping ' + unicode(e))
-                    elif name == 'package_create' and u'That URL is already in use.' in e.error_dict.get('name',[]): 
-                        self._process.errors.append(debug_action
-                                                    + "\n\tURL in use: " + kwargs['url']
-                                                    + "\n\tdb.informationResource.find({'metadata.webPageUrl': '"+ kwargs['url'] +"'})" )
-                    else: 
-                        self._process.errors.append(debug_action + "\n\t" + str(e))
 
-                    print str(e)
-                        
-                except ckanapi.errors.NotFound as e: 
+            try:
+                if config.perform_update and name.endswith('_create') and kwargs.get('id', None) and name != 'organization_member_create' and name != 'member_create':
+                    show = getattr(self._ckan.action, name.replace('_create', '_show'))
+                    update = getattr(self, name.replace('_create', '_update'))
+                    try:
+                        show(id=kwargs['id'])
+                        if config.update_existing:
+                            return update(**kwargs)
+                        return None
+
+                    except ckanapi.errors.NotFound:
+                        return caction(**kwargs)
+
+                return caction(**kwargs)
+            except ckanapi.errors.ValidationError as e:
+                if name == 'vocabulary_create' and u'That vocabulary name is already in use.' in e.error_dict.get('name',[]):
+                    self._process.warnings.append('Skipping ' + unicode(e))
+                elif name == 'package_create' and u'That URL is already in use.' in e.error_dict.get('name',[]):
+                    self._process.errors.append(debug_action
+                                                + "\n\tURL in use: " + kwargs['url']
+                                                + "\n\tdb.informationResource.find({'metadata.webPageUrl': '"+ kwargs['url'] +"'})" )
+                else:
                     self._process.errors.append(debug_action + "\n\t" + str(e))
 
-                    print str(e)
+                print str(e)
 
-                except ckanapi.errors.CKANAPIError as e:
-                    print str(e.extra_msg)
-                    self._process.errors.append(debug_action + "\n\t" + str(e.extra_msg))
-                 
+            except ckanapi.errors.NotFound as e:
+                self._process.errors.append(debug_action + "\n\t" + str(e))
+
+                print str(e)
+
+            except ckanapi.errors.CKANAPIError as e:
+                print str(e.extra_msg)
+                self._process.errors.append(debug_action + "\n\t" + str(e.extra_msg))
+
         return action
     
 class ActionWrapperProduction(object):
