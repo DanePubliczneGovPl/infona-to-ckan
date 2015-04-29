@@ -1,4 +1,4 @@
-# encoding: utf-8
+# coding: utf-8
 import config
 import mapper as tr
 
@@ -197,7 +197,7 @@ class Process(object):
                 'color': '#4b77be',
             },
             "biznes_gospodarka": {
-                'title_i18n-pl': 'Biznes i Gospodarka',
+                'title_i18n-pl': u'Biznes i Gospodarka',
                 'title_i18n-en': 'Business and Economy',
                 'color': '#24485f',
             },
@@ -217,7 +217,7 @@ class Process(object):
                 'color': '#bf3607',
             },
             "rolnictwo": {
-                'title_i18n-pl': 'Rolnictwo',
+                'title_i18n-pl': u'Rolnictwo',
                 'title_i18n-en': 'Agriculture',
                 'color': '#3a539b',
             },
@@ -227,7 +227,7 @@ class Process(object):
                 'color': '#d35400',
             },
             "sport_turystyka": {
-                'title_i18n-pl': 'Sport i Turystyka',
+                'title_i18n-pl': u'Sport i Turystyka',
                 'title_i18n-en': 'Sports and Tourism',
                 'color': '#2574a9',
             },
@@ -458,8 +458,7 @@ class Process(object):
                 else:
                     local_path = self._download_file(ru.metadata.localFileContentId, ru.metadata.fileName)
                     r.update({
-                        'upload': open(local_path),
-                        'url': '', # Will be autopopulated. Empty string is needed due to bug. Otherwise 'Missing value' is thrown
+                        'upload': open(local_path)
                     })
             
             elif ru.metadata.contentSourceClassification == 'FROM_REMOTE_URL':
