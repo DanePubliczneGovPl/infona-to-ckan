@@ -493,15 +493,15 @@ class Process(object):
         self._update_known_keys('user.metadata', [
             'firstName', 'lastName', 'phone', 'office'
             ])                
-        
+
+        userno = 0
         for ud in self.db.user.find():
+            userno += 1
+
             u = Bunch(ud)
             self._mark_unknown_keys('user', ud)
             if u.metadata.additionalMetadata:
                 self._add_unknown_key('user.metadata.additionalMetadata', u.metadata.additionalMetadata)
-
-            if not u.publisherId and config.dev:
-                continue
 
             fullname = tr._((u.metadata.firstName or '') + ' ' + (u.metadata.lastName or '')) or 'Anonim'
             
@@ -524,6 +524,13 @@ class Process(object):
                 'sysadmin': u.role == 'ROLE_ADMIN',
                 'state': tr.user_state(u.status)
             }
+
+            if not u.publisherId and config.dev:
+                un.update({
+                    'email': 'krzysztof.madejski+anonim' + userno + '@epf.org.pl',
+                    'fullname': 'Anonim',
+                    'name': 'anonim' + userno
+                })
 
             if u.metadata.office or u.metadata.phone:
                 un['about'] = json.dumps({'official_position': u.metadata.office, 'official_phone': u.metadata.phone})
