@@ -142,10 +142,35 @@ def alphaname(name):
         u'ł': 'l'
     }
     name = re.sub('^\s+|[\s\.]+$', '', name.lower()) # Trim
+    name = replacepl(name)
+
+    name = re.sub('\\W', '_', name) # Clear other chars
+    return name
+
+def replacepl(name):
+    pl_map = {
+        u"ę": "e",
+        u"ś": "s",
+        u"ą": 'a',
+        u"ż": 'z',
+        u'ź': 'z',
+        u'ó': 'o',
+        u'ć': 'c',
+        u'ń': 'n',
+        u'ł': 'l',
+        u"Ę": "E",
+        u"Ś": "S",
+        u"Ą": 'A',
+        u"Ż": 'Z',
+        u'Ź': 'Z',
+        u'Ó': 'O',
+        u'Ć': 'C',
+        u'Ń': 'N',
+        u'Ł': 'L',
+    }
     for pl, plm in pl_map.iteritems():
         name = re.sub(pl, plm, name)
 
-    name = re.sub('\\W', '_', name) # Clear other chars
     return name
 
 def alphanamepl(name):

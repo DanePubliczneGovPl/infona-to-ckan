@@ -458,7 +458,7 @@ class Process(object):
                 else:
                     local_path = self._download_file(ru.metadata.localFileContentId, ru.metadata.fileName)
                     r.update({
-                        'upload': open(local_path)
+                        'upload': (tr.replacepl(ru.metadata.fileName), open(local_path, 'rb'))
                     })
             
             elif ru.metadata.contentSourceClassification == 'FROM_REMOTE_URL':
